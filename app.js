@@ -4,19 +4,20 @@ const Intern = require("./lib/Intern");
 const inquirer = require("inquirer");
 const path = require("path");
 const fs = require("fs");
-
 const util = require("util");
-const writeFileAsync = util.promisify(fs.writeFile);
 
 const OUTPUT_DIR = path.resolve(__dirname, "output");
 const outputPath = path.join(OUTPUT_DIR, "team.html");
 
 const render = require("./lib/htmlRenderer");
+const writeFileAsync = util.promisify(fs.writeFile);
+
+const employeeInfo = [];
 
 // Write code to use inquirer to gather information about the development team members,
 // and to create objects for each team member (using the correct classes as blueprints!)
 
-addTeamMember();
+generateHTML();
 
 async function addTeamMember() {
     await inquirer.prompt([
@@ -54,27 +55,39 @@ async function addTeamMember() {
                     name: "github",
                     message: "Enter your team member's GitHub username:"
                 }
-            ]);
-        }
-        else if (role === "Intern") {
+            ])
+            .then(function({github}) {
+                const newEngineer = new Engineer(name, id, email, github);
+                employeeInfo.push(newEngineer);
+            });
+        } else if (role === "Intern") {
             await inquirer.prompt([
                 {
                     type: "input",
                     name: "school",
                     message: "Enter your team member's school name:"
                 }
-            ]);
-        }
-        else {
+            ])
+            .then(function({school}) {
+                const newIntern = new Intern(name, id, email, school);
+                employeeInfo.push(newIntern);
+            });
+        } else {
             await inquirer.prompt([
                 {
                     type: "input",
                     name: "officeNumber",
                     message: "Enter your team member's office phone number:"
                 }
-            ]);
+            ])
+            .then(function({officeNumber}) {
+                const newManager = new Manager(name, id, email, officeNumber);
+                employeeInfo.push(newManager);
+            });
         }
-        inquirer.prompt([
+    })
+    .then(async function() {
+        await inquirer.prompt([
             {
                 type: "list",
                 name: "anotherTM",
@@ -84,27 +97,12 @@ async function addTeamMember() {
                     "no"
                 ]
             }
-        ]) 
-        .then(function({anotherTM, github, school, officeNumber}) {
+        ])
+        .then(function({anotherTM}) {
             if (anotherTM === "yes") {
                 addTeamMember();
             } else {
-                console.log({name, role, id, email, github});
-                // fix undefined github
-                switch ({role}) {
-                    case "Engineer":
-                        const newEngineer = new Engineer(name, role, id, email, github);
-                        render(newEngineer);
-                        break;
-                    case "Intern":
-                        const newIntern = new Intern(name, role, id, email, school);
-                        render(newIntern);
-                        break;
-                    case "Manager":
-                        const newManager = new Manager(name, role, id, email, officeNumber);
-                        render(newManager);
-                        break;
-                }
+                return;
             }
         });
     });
@@ -123,18 +121,17 @@ async function addTeamMember() {
 // Hint: you may need to check if the `output` folder exists and create it if it
 // does not.
 
-// async function generateHTML() {
-//     try {
-//         await writeFileAsync(outputPath, render(employees));
-//         console.log("You've successfully generated a Team Profile!");
+async function generateHTML() {
+    try {
+        await addTeamMember();
+        await writeFileAsync(outputPath, render(employeeInfo));
+        console.log("You've successfully generated a Team Profile!");
 
-//     //catch the error
-//     } catch (err) {
-//         console.log(err);
-//     }
-// }
-
-// generateHTML();
+    //catch the error
+    } catch (err) {
+        console.log(err);
+    }
+}
 
 
 // HINT: each employee type (manager, engineer, or intern) has slightly different
