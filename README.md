@@ -45,7 +45,6 @@
 
   👤 https://github.com/xtineroq
 
-  📧 mcroque89@gmail.com
   
   ## Video Link
   [Walkthrough Video](https://www.loom.com/share/611d52552a3c4674b7538393767058a8)
